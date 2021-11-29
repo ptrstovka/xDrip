@@ -13,19 +13,19 @@ import com.eveningoutpost.dexdrip.UtilityModels.Constants;
 import java.util.Date;
 import java.util.List;
 
-        import com.google.gson.GsonBuilder;
-        import com.google.gson.annotations.Expose;
-        import org.json.JSONException;
-        import org.json.JSONObject;
+import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.Expose;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 @Table(name = "Libre2RawValue2", id = BaseColumns._ID)
 public class Libre2RawValue extends PlusModel {
     private static final String TAG = "libre2rawvalue";
 
     static final String[] schema = {
-            "DROP TABLE Libre2RawValue;",
-            "CREATE TABLE Libre2RawValue2 (_id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, serial STRING, glucose REAL);",
-            "CREATE INDEX index_Libre2RawValue2_ts on Libre2RawValue2(ts);"
+        "DROP TABLE Libre2RawValue;",
+        "CREATE TABLE Libre2RawValue2 (_id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, serial STRING, glucose REAL);",
+        "CREATE INDEX index_Libre2RawValue2_ts on Libre2RawValue2(ts);"
     };
 
     @Column(name = "serial", index = true)
@@ -94,8 +94,8 @@ public class Libre2RawValue extends PlusModel {
     }
 
     public static Libre2RawValue fromJSON(String json) {
-        NewLibre2RawValue nl2rv = new GsonBuilder ().excludeFieldsWithoutExposeAnnotation ().create().fromJson(json, NewLibre2RawValue.class);
-        Libre2RawValue l2rv = new Libre2RawValue ();
+        NewLibre2RawValue nl2rv = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create().fromJson(json, NewLibre2RawValue.class);
+        Libre2RawValue l2rv = new Libre2RawValue();
         l2rv.serial = nl2rv.serial;
         l2rv.glucose = nl2rv.glucose;
         l2rv.timestamp = nl2rv.timestamp;
