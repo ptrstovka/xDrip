@@ -47,8 +47,8 @@ import com.bytehamster.lib.preferencesearch.SearchConfiguration;
 import com.bytehamster.lib.preferencesearch.SearchPreferenceResult;
 import com.bytehamster.lib.preferencesearch.SearchPreferenceResultListener;
 import com.eveningoutpost.dexdrip.BasePreferenceActivity;
-import com.eveningoutpost.dexdrip.G5Model.DexSyncKeeper;
-import com.eveningoutpost.dexdrip.G5Model.Ob1G5StateMachine;
+import com.eveningoutpost.dexdrip.g5model.DexSyncKeeper;
+import com.eveningoutpost.dexdrip.g5model.Ob1G5StateMachine;
 import com.eveningoutpost.dexdrip.GcmActivity;
 import com.eveningoutpost.dexdrip.Home;
 import com.eveningoutpost.dexdrip.Models.DesertSync;
@@ -61,12 +61,14 @@ import com.eveningoutpost.dexdrip.Models.UserNotification;
 import com.eveningoutpost.dexdrip.NFCReaderX;
 import com.eveningoutpost.dexdrip.ParakeetHelper;
 import com.eveningoutpost.dexdrip.R;
-import com.eveningoutpost.dexdrip.Services.ActivityRecognizedService;
-import com.eveningoutpost.dexdrip.Services.BluetoothGlucoseMeter;
-import com.eveningoutpost.dexdrip.Services.DexCollectionService;
-import com.eveningoutpost.dexdrip.Services.G5BaseService;
-import com.eveningoutpost.dexdrip.Services.PlusSyncService;
-import com.eveningoutpost.dexdrip.Services.UiBasedCollector;
+import com.eveningoutpost.dexdrip.alert.Registry;
+import com.eveningoutpost.dexdrip.services.ActivityRecognizedService;
+import com.eveningoutpost.dexdrip.services.BluetoothGlucoseMeter;
+import com.eveningoutpost.dexdrip.services.DexCollectionService;
+import com.eveningoutpost.dexdrip.services.G5BaseService;
+import com.eveningoutpost.dexdrip.services.Ob1G5CollectionService;
+import com.eveningoutpost.dexdrip.services.PlusSyncService;
+import com.eveningoutpost.dexdrip.services.UiBasedCollector;
 import com.eveningoutpost.dexdrip.UtilityModels.BgGraphBuilder;
 import com.eveningoutpost.dexdrip.UtilityModels.CollectionServiceStarter;
 import com.eveningoutpost.dexdrip.UtilityModels.Constants;
@@ -100,6 +102,7 @@ import com.eveningoutpost.dexdrip.tidepool.AuthFlowOut;
 import com.eveningoutpost.dexdrip.tidepool.TidepoolUploader;
 import com.eveningoutpost.dexdrip.tidepool.UploadChunk;
 import com.eveningoutpost.dexdrip.ui.LockScreenWallPaper;
+import com.eveningoutpost.dexdrip.ui.dialog.GenericConfirmDialog;
 import com.eveningoutpost.dexdrip.utils.framework.IncomingCallsReceiver;
 import com.eveningoutpost.dexdrip.watch.lefun.LeFunEntry;
 import com.eveningoutpost.dexdrip.watch.miband.MiBand;
@@ -109,7 +112,7 @@ import com.eveningoutpost.dexdrip.watch.thinjam.BlueJay;
 import com.eveningoutpost.dexdrip.watch.thinjam.BlueJayAdapter;
 import com.eveningoutpost.dexdrip.watch.thinjam.BlueJayEntry;
 import com.eveningoutpost.dexdrip.wearintegration.Amazfitservice;
-import com.eveningoutpost.dexdrip.Services.broadcastservice.BroadcastService;
+import com.eveningoutpost.dexdrip.services.broadcastservice.BroadcastService;
 import com.eveningoutpost.dexdrip.wearintegration.WatchUpdaterService;
 import com.eveningoutpost.dexdrip.webservices.XdripWebService;
 import com.eveningoutpost.dexdrip.xDripWidget;
@@ -124,6 +127,7 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -253,7 +257,7 @@ public class Preferences extends BasePreferenceActivity implements SearchPrefere
     private void installxDripPlusPreferencesFromQRCode(SharedPreferences prefs, String data) {
         Log.d(TAG, "installing preferences from QRcode");
         try {
-            Map<String, String> prefsmap = DisplayQRCode.decodeString(data);
+            Map<String, String> prefsmap = QRcodeUtils.decodeString(data);
             if (prefsmap != null) {
                 if (prefsmap.containsKey(getString(R.string.all_settings_wizard))) {
                     if (prefsmap.containsKey(getString(R.string.wizard_key))
@@ -267,31 +271,37 @@ public class Preferences extends BasePreferenceActivity implements SearchPrefere
                     return;
                 }
 
-                final SharedPreferences.Editor editor = prefs.edit();
-                int changes = 0;
-                for (Map.Entry<String, String> entry : prefsmap.entrySet()) {
-                    String key = entry.getKey();
-                    String value = entry.getValue();
-                    //            Log.d(TAG, "Saving preferences: " + key + " = " + value);
-                    if (value.equals("true") || (value.equals("false"))) {
-                        editor.putBoolean(key, Boolean.parseBoolean(value));
-                        changes++;
-                    } else if (!value.equals("null")) {
-                        editor.putString(key, value);
-                        changes++;
+                val sb = getMapKeysString(prefsmap);
+                val msg = getString(R.string.import_qr_code_warning) + sb;
+
+                GenericConfirmDialog.show(this, gs(R.string.are_you_sure), msg, () -> {
+                    final SharedPreferences.Editor editor = prefs.edit();
+                    int changes = 0;
+                    for (Map.Entry<String, String> entry : prefsmap.entrySet()) {
+                        String key = entry.getKey();
+                        String value = entry.getValue();
+                        //            Log.d(TAG, "Saving preferences: " + key + " = " + value);
+                        if (value.equals("true") || (value.equals("false"))) {
+                            editor.putBoolean(key, Boolean.parseBoolean(value));
+                            changes++;
+                        } else if (!value.equals("null")) {
+                            editor.putString(key, value);
+                            changes++;
+                        }
                     }
-                }
-                editor.apply();
-                refreshFragments();
-                ExtraLogTags.readPreference(Pref.getStringDefaultBlank("extra_tags_for_logging"));
-                Toast.makeText(getApplicationContext(), "Loaded " + Integer.toString(changes) + " preferences from QR code", Toast.LENGTH_LONG).show();
-                PlusSyncService.clearandRestartSyncService(getApplicationContext());
-                DesertSync.settingsChanged(); // refresh
-                if (prefs.getString("dex_collection_method", "").equals("Follower")) {
+                    editor.apply();
+                    refreshFragments();
+                    ExtraLogTags.readPreference(Pref.getStringDefaultBlank("extra_tags_for_logging"));
+                    Toast.makeText(getApplicationContext(), "Loaded " + Integer.toString(changes) + " preferences from QR code", Toast.LENGTH_LONG).show();
                     PlusSyncService.clearandRestartSyncService(getApplicationContext());
-                    GcmActivity.last_sync_request = 0;
-                    GcmActivity.requestBGsync();
-                }
+                    DesertSync.settingsChanged(); // refresh
+                    if (prefs.getString("dex_collection_method", "").equals("Follower")) {
+                        PlusSyncService.clearandRestartSyncService(getApplicationContext());
+                        GcmActivity.last_sync_request = 0;
+                        GcmActivity.requestBGsync();
+                    }
+                });
+
             } else {
                 android.util.Log.e(TAG, "Got null prefsmap during decode");
             }
@@ -299,6 +309,18 @@ public class Preferences extends BasePreferenceActivity implements SearchPrefere
             Log.e(TAG, "Got exception installing preferences");
         }
 
+    }
+
+    public static String getMapKeysString(final Map<String, ?> prefsmap) {
+        val sb = new StringBuilder();
+        val keysSet = prefsmap.keySet();
+        val keyList = new ArrayList<>(keysSet);
+        Collections.sort(keyList);
+        for (val entry : keyList) {
+            sb.append(entry);
+            sb.append("\n");
+        }
+        return sb.toString();
     }
 
 
@@ -333,7 +355,7 @@ public class Preferences extends BasePreferenceActivity implements SearchPrefere
         if (scanResult.getFormatName().equals("QR_CODE")) {
 
             final String scanresults = scanResult.getContents();
-            if (scanresults.startsWith(DisplayQRCode.qrmarker)) {
+            if (QRcodeUtils.hasDecoderMarker(scanresults)) {
                 installxDripPlusPreferencesFromQRCode(prefs, scanresults);
                 return;
             }
@@ -492,6 +514,7 @@ public class Preferences extends BasePreferenceActivity implements SearchPrefere
         PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(BroadcastService.prefListener);
         PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(BlueJayEntry.prefListener);
         PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(uiPrefListener);
+        PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(Registry.prefListener);
         LocalBroadcastManager.getInstance(this).registerReceiver(mibandStatusReceiver,
                 new IntentFilter(Intents.PREFERENCE_INTENT));
     }
@@ -506,6 +529,7 @@ public class Preferences extends BasePreferenceActivity implements SearchPrefere
         PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(BroadcastService.prefListener);
         PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(BlueJayEntry.prefListener);
         PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(uiPrefListener);
+        PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(Registry.prefListener);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mibandStatusReceiver);
         pFragment = null;
         super.onPause();
@@ -2278,6 +2302,7 @@ public class Preferences extends BasePreferenceActivity implements SearchPrefere
                             } catch (Exception e) {
                                 //
                             }
+                            Ob1G5CollectionService.clearPersist();
                             CollectionServiceStarter.restartCollectionService(xdrip.getAppContext());
                         }
                     }).start();

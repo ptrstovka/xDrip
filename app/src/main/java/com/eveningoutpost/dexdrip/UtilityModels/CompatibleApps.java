@@ -17,7 +17,7 @@ import com.eveningoutpost.dexdrip.Home;
 import com.eveningoutpost.dexdrip.Models.JoH;
 import com.eveningoutpost.dexdrip.Models.UserError;
 import com.eveningoutpost.dexdrip.R;
-import com.eveningoutpost.dexdrip.Services.G5BaseService;
+import com.eveningoutpost.dexdrip.services.G5BaseService;
 import com.eveningoutpost.dexdrip.utils.DexCollectionType;
 import com.eveningoutpost.dexdrip.webservices.XdripWebService;
 import com.eveningoutpost.dexdrip.xdrip;
@@ -140,7 +140,7 @@ public class CompatibleApps extends BroadcastReceiver {
             if (!PersistentStore.getBoolean(ANDROID_10_WORKAROUND_MARKER, false)) {
                 UserError.Log.ueh(CompatibleApps.class.getSimpleName(),"Enabling default workarounds for Android 10+ setting minimize/avoid scanning to enabled");
                 Pref.setBoolean("ob1_minimize_scanning", true);
-                Pref.setBoolean("ob1_avoid_scanning", true);
+               // Pref.setBoolean("ob1_avoid_scanning", true);
                 PersistentStore.setBoolean(ANDROID_10_WORKAROUND_MARKER, true);
             }
         }

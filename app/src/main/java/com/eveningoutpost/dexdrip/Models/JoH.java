@@ -68,6 +68,7 @@ import com.eveningoutpost.dexdrip.UtilityModels.Pref;
 import com.eveningoutpost.dexdrip.UtilityModels.XdripNotificationCompat;
 import com.eveningoutpost.dexdrip.utils.BestGZIPOutputStream;
 import com.eveningoutpost.dexdrip.utils.CipherUtils;
+import com.eveningoutpost.dexdrip.utils.framework.BuggySamsung;
 import com.eveningoutpost.dexdrip.xdrip;
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.UnsignedInts;
@@ -439,7 +440,7 @@ public class JoH {
     }
 
     public static boolean isSamsung() {
-        return Build.MANUFACTURER.toLowerCase().contains("samsung");
+        return BuggySamsung.isSamsung();
     }
 
     private static final String BUGGY_SAMSUNG_ENABLED = "buggy-samsung-enabled";
@@ -447,7 +448,7 @@ public class JoH {
         if (!buggy_samsung) {
            if (JoH.isSamsung() && PersistentStore.getLong(BUGGY_SAMSUNG_ENABLED) > 4) {
                buggy_samsung = true;
-               UserError.Log.d(TAG,"Enabling buggy samsung mode due to historical pattern");
+               UserError.Log.d(TAG,"Enabling wake workaround mode due to historical pattern");
            }
         }
     }
@@ -1500,6 +1501,10 @@ public class JoH {
     }
 
     public static void showNotification(String title, String content, PendingIntent intent, int notificationId, String channelId, boolean sound, boolean vibrate, PendingIntent deleteIntent, Uri sound_uri, String bigmsg) {
+        showNotification(title, content, intent, notificationId, channelId, sound, vibrate, deleteIntent, sound_uri, bigmsg, false);
+    }
+
+    public static void showNotification(String title, String content, PendingIntent intent, int notificationId, String channelId, boolean sound, boolean vibrate, PendingIntent deleteIntent, Uri sound_uri, String bigmsg, boolean highPriority) {
         final NotificationCompat.Builder mBuilder = notificationBuilder(title, content, intent, channelId);
         final long[] vibratePattern = {0, 1000, 300, 1000, 300, 1000};
         if (vibrate) mBuilder.setVibrate(vibratePattern);
@@ -1512,6 +1517,10 @@ public class JoH {
 
         if (bigmsg != null) {
             mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(bigmsg));
+        }
+
+        if (highPriority) {
+            mBuilder.setPriority(NotificationCompat.PRIORITY_MAX);
         }
 
         final NotificationManager mNotifyMgr = (NotificationManager) xdrip.getAppContext().getSystemService(Context.NOTIFICATION_SERVICE);

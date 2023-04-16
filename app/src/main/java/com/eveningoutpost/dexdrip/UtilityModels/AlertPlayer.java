@@ -11,12 +11,12 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.AssetFileDescriptor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 
@@ -28,24 +28,27 @@ import com.eveningoutpost.dexdrip.Models.JoH;
 import com.eveningoutpost.dexdrip.Models.UserError;
 import com.eveningoutpost.dexdrip.Models.UserError.Log;
 import com.eveningoutpost.dexdrip.R;
-import com.eveningoutpost.dexdrip.Services.SnoozeOnNotificationDismissService;
+import com.eveningoutpost.dexdrip.services.SnoozeOnNotificationDismissService;
 import com.eveningoutpost.dexdrip.SnoozeActivity;
 import com.eveningoutpost.dexdrip.UtilityModels.pebble.PebbleWatchSync;
 import com.eveningoutpost.dexdrip.eassist.AlertTracker;
+import com.eveningoutpost.dexdrip.ui.FlashLight;
 import com.eveningoutpost.dexdrip.ui.helpers.AudioFocusType;
+import com.eveningoutpost.dexdrip.utils.PowerStateReceiver;
 import com.eveningoutpost.dexdrip.watch.lefun.LeFun;
 import com.eveningoutpost.dexdrip.watch.lefun.LeFunEntry;
 import com.eveningoutpost.dexdrip.watch.miband.MiBand;
 import com.eveningoutpost.dexdrip.watch.miband.MiBandEntry;
 import com.eveningoutpost.dexdrip.watch.thinjam.BlueJayEntry;
 import com.eveningoutpost.dexdrip.wearintegration.Amazfitservice;
-import com.eveningoutpost.dexdrip.Services.broadcastservice.BroadcastEntry;
+import com.eveningoutpost.dexdrip.services.broadcastservice.BroadcastEntry;
 import com.eveningoutpost.dexdrip.wearintegration.WatchUpdaterService;
-import com.eveningoutpost.dexdrip.Services.broadcastservice.Const;
+import com.eveningoutpost.dexdrip.services.broadcastservice.Const;
 import com.eveningoutpost.dexdrip.xdrip;
 
-import java.io.IOException;
 import java.util.Date;
+
+import lombok.Getter;
 
 
 // A helper class to create the mediaplayer on the UI thread.
@@ -106,7 +109,8 @@ class MediaPlayerCreaterHelper {
 public class AlertPlayer {
 
     private volatile static AlertPlayer alertPlayerInstance;
-
+    @Getter
+    private volatile static long lastVolumeChange = 0;
     private final static String TAG = AlertPlayer.class.getSimpleName();
     private volatile MediaPlayer mediaPlayer = null;
     private final AudioManager manager = (AudioManager)xdrip.getAppContext().getSystemService(Context.AUDIO_SERVICE);
@@ -122,6 +126,10 @@ public class AlertPlayer {
     // when ascending how many minutes since alert started do we wait before escalating
     final static int MAX_VIBRATING_MINUTES = 2;
     final static int MAX_ASCENDING_MINUTES = 5;
+
+    // Ascending without delay profile
+    final static float NODELAY_ASCENDING_INTERCEPT = 0.3333f; // Lower volumes are silent on some phones.
+    final static float NODELAY_ASCENDING_SLOPE = 0.166675f; // So that the volume reaches 1 (max) in 4 steps (1-2-3-4-5) since in most cases, we have a new reading once every 5 minutes.
 
     public int streamType = AudioManager.STREAM_MUSIC;
 
@@ -236,6 +244,8 @@ public class AlertPlayer {
                 && Pref.getBooleanDefaultFalse("pref_amazfit_BG_alert_enable_key")) {
             Amazfitservice.start("xDrip_AlarmCancel");
         }
+
+        BroadcastEntry.cancelAlert();
     }
 
     public synchronized void Snooze(Context ctx, int repeatTime, boolean from_interactive) {
@@ -330,6 +340,10 @@ public class AlertPlayer {
         if (mediaPlayer == null) {
             Log.wtf(TAG, "MediaPlayerCreaterHelper().createMediaPlayer failed !!");
             return;
+        }
+
+        if (Pref.getBooleanDefaultFalse("wake_phone_during_alerts")) {
+            mediaPlayer.setWakeMode(ctx, PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP);
         }
 
         mediaPlayer.setOnCompletionListener(mp -> {
@@ -431,6 +445,7 @@ public class AlertPlayer {
             return;
         }
         try {
+            lastVolumeChange = JoH.tsl();
             manager.setStreamVolume(streamType, volume, 0);
             Log.d(TAG, "Adjusted volume to: " + volume);
         } catch (SecurityException e) {
@@ -534,11 +549,11 @@ public class AlertPlayer {
         if (profile != ALERT_PROFILE_VIBRATE_ONLY && profile != ALERT_PROFILE_SILENT) {
             float volumeFrac = (float) (minsFromStartPlaying - MAX_VIBRATING_MINUTES) / (MAX_ASCENDING_MINUTES - MAX_VIBRATING_MINUTES);
             // While minsFromStartPlaying <= MAX_VIBRATING_MINUTES, we only vibrate ...
+            if (!Pref.getBoolean("delay_ascending_3min", true)) { // If delay_ascending_3min is disabled, linearly increase volume from start.
+                volumeFrac = (minsFromStartPlaying * NODELAY_ASCENDING_SLOPE + NODELAY_ASCENDING_INTERCEPT);
+            }
             volumeFrac = Math.max(volumeFrac, 0); // Limit volumeFrac to values greater than and equal to 0
             volumeFrac = Math.min(volumeFrac, 1); // Limit volumeFrac to values less than and equal to 1
-            if (!Pref.getBoolean("delay_ascending_3min", true) && volumeFrac < 0.3) {
-                volumeFrac = (float) 0.3; // If delay_ascending_3min is disabled, we never only vibrate.
-            }
             if (profile == ALERT_PROFILE_MEDIUM) {
                 volumeFrac = (float) 0.7;
             }
@@ -607,6 +622,12 @@ public class AlertPlayer {
         // speak alert
         if (Pref.getBooleanDefaultFalse("speak_alerts")) {
             SpeechUtil.say(highlow + ", " + bgValue, 3000);
+        }
+
+        if (Pref.getBooleanDefaultFalse("flash_torch_alerts_charging")) {
+            if (PowerStateReceiver.is_power_connected()) {
+                FlashLight.torchPulse();
+            }
         }
     }
 

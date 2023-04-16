@@ -33,7 +33,7 @@
     <string name="title_activity_fake_numbers">Nombres fictifs</string>
     <string name="title_activity_edit_alert">Modifier l\'alerte</string>
     <string name="title_activity_double_calibration">Étalonnage initial</string>
-    <string name="title_activity_calibration_override">Override de calibration</string>
+    <string name="title_activity_calibration_override">Outrepasser l\'étalonnage</string>
     <string name="pref_header_cloud_storage">Stockage Cloud</string>
     <string name="auto_configure_title">Configuration automatique</string>
     <string name="prefs_auto_config_summary">Configuration automatique en utilisant un code-barres.</string>
@@ -140,7 +140,7 @@
     <string name="minutes_with_bracket">" minutes)"</string>
     <string name="possible_bad_calibration">Possible mauvaise pente de calibration, allez boire un verre d\'eau, lavez-vous les mains, puis recalibrez dans quelques instants!</string>
     <string name="please_wait_need_two_readings_first">L\'émetteur nécessite 2 lectures supplémentaires.</string>
-    <string name="please_enter_two_calibrations_to_get_started">S\'il vous plaît effectuez deux calibrations pour commencer!</string>
+    <string name="please_enter_two_calibrations_to_get_started">Veuillez effectuer deux étalonnages pour commencer!</string>
     <string name="now_pair_with_your_dexcom_share">Maintenant jumeler avec votre Dexcom Share</string>
     <string name="now_choose_start_sensor_in_settings">Maintenant, choisissez démarrer votre capteur dans vos paramètres</string>
     <string name="double_check_dex_receiver_serial_number">Vérifier le numéro de série du récepteur Dex, il devrait être de 10 caractères, ne pas oublier les lettres</string>
@@ -359,7 +359,7 @@
     <string name="xdrip_plus_security_key_settings_only">xDrip+ Clés de Sécurité seulement</string>
     <string name="show_general_and_collection_settings">Afficher les paramètres Généraux et Collection</string>
     <string name="copy_all_settings">Copier tous les paramètres</string>
-    <string name="sensor_is_ready_please_enter_double_calibration">Le capteur est prêt, s\'il vous plaît entrer un double calibrage</string>
+    <string name="sensor_is_ready_please_enter_double_calibration">Le capteur est prêt, veuillez entrer une calibration initiale</string>
     <string name="in_order_to_get_started_please_perform_two_finger">Pour pouvoir commencer, effectuer deux tests de glycémie capillaire et entrer les valeurs ici!</string>
     <string name="enter_first_bg_value">Entrer la première valeur de glycémie</string>
     <string name="enter_second_bg_value">Entrer la seconde valeur de glycémie</string>
@@ -889,7 +889,7 @@
     <string name="DoubleDown">Baisse rapide</string>
     <string name="SingleDown">Baisse</string>
     <string name="FortyFiveDown">Baisse faible</string>
-    <string name="Flat">Cohérente</string>
+    <string name="Flat">Inchangé</string>
     <string name="FortyFiveUp">Hausse légère</string>
     <string name="SingleUp">Hausse</string>
     <string name="DoubleUp">Hausse rapide</string>
@@ -1273,8 +1273,8 @@
     <string name="title_lefun_screen_heart_pressure">Afficher la pression cardiaque</string>
     <string name="title_lefun_screen_find_phone">Afficher Trouver le téléphone / Mettre en veille</string>
     <string name="title_lefun_screen_mac_address">Afficher l\'adresse MAC</string>
-    <string name="summary_allow_samsung_workaround">Utiliser des contournements pour éviter le comportement android non standard des terminaux Samsung. Sans cela, les collecteurs ne peuvent pas obtenir les données.</string>
-    <string name="title_allow_samsung_workaround">Solutions de contournement Samsung</string>
+    <string name="summary_allow_samsung_workaround">Utiliser des contournements pour éviter le comportement Android non standard de certains terminaux. Sans cela, les collecteurs ne peuvent pas obtenir les données.</string>
+    <string name="title_allow_samsung_workaround">Solutions de contournement Wake</string>
     <string name="summary_medtrum_use_native">Utiliser la calibration de l\'émetteur au lieu de xDrip comme primaire</string>
     <string name="title_medtrum_use_native">Medtrum Natif</string>
     <string name="summary_medtrum_a_hex">Valeur hexa de test de diagnostic</string>
@@ -1753,5 +1753,19 @@
     <string name="format_string_ago">Il y a %s</string>
     <string name="use_background_scans">Utiliser les scans en arrière-plan</string>
     <string name="android_8_background_scanning">Utiliser la fonction de scan en arrière-plan d\'Android 8+</string>
+    <string name="title_yRange">Personnaliser la plage de l\'axe y</string>
+    <string name="titleInside_yRange">Activer</string>
+    <string name="summaryInside_yRange">Vous pouvez ajuster la plage d\'axe vertical (y) ici.\nCependant, si vous avez des valeurs en dehors de cette fourchette, elles s\'étendront automatiquement, pendant plusieurs heures, pour permettre à ces valeurs de s\'afficher.</string>
+    <string name="title_ymin">Ajuster l\'axe y minimum</string>
+    <string name="title_ymax">Ajuster l\'axe y maximum</string>
+    <string name="summary_ymin">Choisir yMin lorsqu\'il n\'y a pas de lectures plus petites.</string>
+    <string name="summary_ymax">Choisir yMax lorsqu\'il n\'y a pas de lectures plus grandes.</string>
     <string name="close">Fermer</string>
+    <string name="title_advanced_settings_4_Lib2">Paramètres avancés pour Libre 2</string>
+    <string name="title_Lib2_show_raw_values">Afficher les valeurs brutes dans le graphique</string>
+    <string name="summary_Lib2_show_raw_values">Activer pour afficher les valeurs brutes dans le graphique.</string>
+    <string name="title_Lib2_show_sense_on_status">Afficher les informations du capteur dans statut</string>
+    <string name="summary_Lib2_show_sense_on_status">Activez pour afficher des informations supplémentaires du capteur de Libre 2 dans Statut.</string>
+    <string name="import_qr_code_warning">Importer les paramètres eulement des sources de confiance !\n\nVeuillez confirmer l\'importation les paramètres suivants :\n\n</string>
+    <string name="scan_to_load_xdrip_settings">Scanner pour charger les paramètres de xDrip</string>
 </resources>
